@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using twetty.Context;
 using twetty.DTOs;
 using twetty.Models;
 using twetty.Services.UserService;
@@ -15,22 +17,34 @@ namespace twetty.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        public static User user = new User();
+        private readonly ApplicationDbContext _db;
         private readonly IConfiguration _configuration;
 
-        public AuthController(IConfiguration configuration)
+        // Inject ApplicationDbContext into the controller
+        public AuthController(ApplicationDbContext db, IConfiguration configuration)
         {
+            _db = db;
             _configuration = configuration;
         }
 
+        // Update Register and Login methods to interact with the database
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register(UserDto request)
         {
             CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
 
-            user.Username = request.Username;
-            user.PasswordHash = passwordHash;
-            user.PasswordSalt = passwordSalt;
+            var user = new User
+            {
+                Username = request.Username,
+                PasswordHash = passwordHash,
+                PasswordSalt = passwordSalt,
+                Email = request.Email,
+                CreatedAt = DateTime.UtcNow,
+                ProfileImageURL = request.ProfileImageURL
+            };
+
+            _db.Users.Add(user);
+            await _db.SaveChangesAsync();
 
             return Ok(user);
         }
@@ -38,7 +52,9 @@ namespace twetty.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<string>> Login(UserDto request)
         {
-            if (user.Username != request.Username)
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
+
+            if (user == null)
             {
                 return BadRequest("User not found.");
             }

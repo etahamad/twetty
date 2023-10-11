@@ -1,30 +1,41 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
-using System.Text.Json;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using twetty.Context;
-using twetty.Models;
 using twetty.DTOs;
-using System.Drawing.Text;
-using System.Security.Cryptography;
+using twetty.Models;
 
-namespace twetty.Controllers;
-
-public static class UserEndpoints
+namespace twetty.Controllers
 {
-    public static void MapUserEndpoints (this IEndpointRouteBuilder routes)
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
+    public class UserController : ControllerBase
     {
-        // Endpoint to delete a user by username
-        routes.MapDelete("/api/Users/{username}", async (string username, ApplicationDbContext db) =>
+        private readonly ApplicationDbContext _db;
+
+        public UserController(ApplicationDbContext db)
         {
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Username == username);
+            _db = db;
+        }
+
+        [HttpDelete("{username}")]
+        public async Task<ActionResult<UserDto>> DeleteUser(string username)
+        {
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
 
             if (user == null)
             {
-                return Results.NotFound();
+                return NotFound();
             }
 
-            db.Users.Remove(user);
-            await db.SaveChangesAsync();
+            _db.Users.Remove(user);
+            await _db.SaveChangesAsync();
 
             var userResponse = new UserDto
             {
@@ -34,63 +45,55 @@ public static class UserEndpoints
                 CreatedAt = user.CreatedAt
             };
 
-            return Results.Ok(userResponse);
-        })
-        .WithName("DeleteUser")
-        .Produces<UserDto>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+            return Ok(userResponse);
+        }
 
-        routes.MapPut("/api/Tweets/{id}", async (int id, EditTweetDto updatedTweet, ApplicationDbContext db) =>
+        [HttpPut("Tweet/{id}")]
+        public async Task<ActionResult<TweetDto>> EditTweet(int id, EditTweetDto updatedTweet)
         {
-            var existingTweet = await db.Tweets.FindAsync(id);
+            var existingTweet = await _db.Tweets.FindAsync(id);
 
             if (existingTweet == null)
             {
-                return Results.NotFound();
+                return NotFound();
             }
 
             existingTweet.Content = updatedTweet.Content;
 
-            await db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
 
             var tweetResponse = new TweetDto
             {
                 Content = existingTweet.Content
             };
 
-            return Results.Ok(tweetResponse);
-        })
-        .WithName("EditTweet")
-        .Produces<TweetDto>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+            return Ok(tweetResponse);
+        }
 
-
-
-        routes.MapDelete("/api/Tweets/{id}", async (int id, ApplicationDbContext db) =>
+        [HttpDelete("Tweet/{id}")]
+        public async Task<ActionResult<Tweet>> DeleteTweet(int id)
         {
-            var tweet = await db.Tweets.FindAsync(id);
+            var tweet = await _db.Tweets.FindAsync(id);
 
             if (tweet == null)
             {
-                return Results.NotFound();
+                return NotFound();
             }
 
-            db.Tweets.Remove(tweet);
-            await db.SaveChangesAsync();
+            _db.Tweets.Remove(tweet);
+            await _db.SaveChangesAsync();
 
-            return Results.Ok(tweet);
-        })
-        .WithName("DeleteTweet")
-        .Produces<TweetDto>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+            return Ok(tweet);
+        }
 
-        routes.MapPost("/api/Tweets", async (TweetDto tweetDto, ApplicationDbContext db) =>
+        [HttpPost("Tweet")]
+        public async Task<ActionResult<TweetDto>> CreateTweet(TweetDto tweetDto)
         {
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Username == tweetDto.Username);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == tweetDto.Username);
 
             if (user == null)
             {
-                return Results.NotFound("User not found.");
+                return NotFound("User not found.");
             }
 
             var tweet = new Tweet
@@ -100,8 +103,8 @@ public static class UserEndpoints
                 CreatedAt = DateTime.UtcNow
             };
 
-            db.Tweets.Add(tweet);
-            await db.SaveChangesAsync();
+            _db.Tweets.Add(tweet);
+            await _db.SaveChangesAsync();
 
             var tweetResponse = new TweetDto
             {
@@ -110,23 +113,21 @@ public static class UserEndpoints
                 CreatedAt = tweet.CreatedAt
             };
 
-            return Results.Created($"/api/Tweets/{tweet.Id}", tweetResponse);
-        })
-        .WithName("CreateTweet")
-        .Produces<TweetDto>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status404NotFound);
+            return Created($"/api/Tweets/{tweet.Id}", tweetResponse);
+        }
 
-        routes.MapGet("/api/Tweets/ByUser/{username}", async (string username, ApplicationDbContext db) =>
+        [HttpGet("Tweets/{username}")]
+        public async Task<ActionResult<List<TweetDto>>> GetTweetsByUser(string username)
         {
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Username == username);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
 
             if (user == null)
             {
-                return Results.NotFound();
+                return NotFound();
             }
 
-            var tweets = await db.Tweets
-            .Where(t => t.Username == user.Username)
+            var tweets = await _db.Tweets
+                .Where(t => t.Username == user.Username)
                 .Select(t => new TweetDto
                 {
                     Username = user.Username,
@@ -135,27 +136,25 @@ public static class UserEndpoints
                 })
                 .ToListAsync();
 
-            return Results.Ok(tweets);
-        })
-        .WithName("GetTweetsByUser")
-        .Produces<List<TweetDto>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+            return Ok(tweets);
+        }
 
-        routes.MapPost("/api/Likes", async (LikeDto likeDto, ApplicationDbContext db) =>
+        [HttpPost("Like")]
+        public async Task<ActionResult<string>> LikeTweet(LikeDto likeDto)
         {
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Username == likeDto.Username);
-            var tweet = await db.Tweets.FindAsync(likeDto.TweetId);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == likeDto.Username);
+            var tweet = await _db.Tweets.FindAsync(likeDto.TweetId);
 
             if (user == null || tweet == null)
             {
-                return Results.NotFound("User or tweet not found.");
+                return NotFound("User or tweet not found.");
             }
 
-            var existingLike = await db.Likes.FirstOrDefaultAsync(l => l.Username == user.Username && l.TweetId == tweet.Id);
+            var existingLike = await _db.Likes.FirstOrDefaultAsync(l => l.Username == user.Username && l.TweetId == tweet.Id);
 
             if (existingLike != null)
             {
-                return Results.Conflict("User already liked this tweet.");
+                return Conflict("User already liked this tweet.");
             }
 
             var like = new Like
@@ -164,43 +163,34 @@ public static class UserEndpoints
                 TweetId = tweet.Id
             };
 
-            db.Likes.Add(like);
-            await db.SaveChangesAsync();
+            _db.Likes.Add(like);
+            await _db.SaveChangesAsync();
 
-            return Results.Ok("Tweet liked successfully.");
-        })
-        .WithName("LikeTweet")
-        .Produces(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+            return Ok("Tweet liked successfully.");
+        }
 
-        routes.MapDelete("/api/Likes", async (string username, int tweetId, ApplicationDbContext db) =>
+        [HttpDelete("Unlike")]
+        public async Task<ActionResult<string>> UnlikeTweet(string username, int tweetId)
         {
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Username == username);
-            var tweet = await db.Tweets.FindAsync(tweetId);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
+            var tweet = await _db.Tweets.FindAsync(tweetId);
 
             if (user == null || tweet == null)
             {
-                return Results.NotFound("User or tweet not found.");
+                return NotFound("User or tweet not found.");
             }
 
-            var like = await db.Likes.FirstOrDefaultAsync(l => l.Username == user.Username && l.TweetId == tweet.Id);
+            var like = await _db.Likes.FirstOrDefaultAsync(l => l.Username == user.Username && l.TweetId == tweet.Id);
 
             if (like == null)
             {
-                return Results.NotFound("User has not liked this tweet.");
+                return NotFound("User has not liked this tweet.");
             }
 
-            db.Likes.Remove(like);
-            await db.SaveChangesAsync();
+            _db.Likes.Remove(like);
+            await _db.SaveChangesAsync();
 
-            return Results.Ok("Tweet unliked successfully.");
-        })
-        .WithName("UnlikeTweet")
-        .Produces(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status404NotFound);
-
-
+            return Ok("Tweet unliked successfully.");
+        }
     }
 }
