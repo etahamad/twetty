@@ -57,7 +57,7 @@ namespace twetty.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<string>> Login(UserDto request)
+        public async Task<ActionResult<string>> Login(LoginRequestDto request)
         {
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
 
