@@ -39,7 +39,7 @@ namespace twetty.Context
 
             // Many-to-Many: User to Follows (through Follow entity)
             modelBuilder.Entity<Follow>()
-                .HasKey(f => new { f.FollowerUsername, f.FollowingUsername });
+                .HasKey(f => new { f.FollowerUsername, f.TargetUsername });
 
             modelBuilder.Entity<Follow>()
                 .HasOne(f => f.FollowerUser)
@@ -47,9 +47,9 @@ namespace twetty.Context
                 .HasForeignKey(f => f.FollowerUsername);
 
             modelBuilder.Entity<Follow>()
-                .HasOne(f => f.FollowingUser)
+                .HasOne(f => f.TargetUser)
                 .WithMany(u => u.Followings)
-                .HasForeignKey(f => f.FollowingUsername);
+                .HasForeignKey(f => f.TargetUsername);
 
             // One-to-Many: User to Retweets
             modelBuilder.Entity<Retweet>()

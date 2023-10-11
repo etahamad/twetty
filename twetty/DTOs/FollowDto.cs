@@ -2,8 +2,7 @@
 {
     public class FollowDto
     {
-        public int FollowerUserId { get; set; }
-        public int FollowingUserId { get; set; }
+        public string TargetUsername { get; set; }
     }
 
 }

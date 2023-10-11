@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using twetty.Context;
 using twetty.DTOs;
@@ -24,9 +24,16 @@ namespace twetty.Controllers
             _db = db;
         }
 
-        [HttpDelete("{username}")]
-        public async Task<ActionResult<UserDto>> DeleteUser(string username)
+        private string GetUsernameFromClaims()
         {
+            return User.FindFirst(ClaimTypes.Name)?.Value;
+        }
+
+        [HttpDelete]
+        public async Task<ActionResult<UserDto>> DeleteUser()
+        {
+            var username = GetUsernameFromClaims();
+
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
 
             if (user == null)
@@ -51,7 +58,11 @@ namespace twetty.Controllers
         [HttpPut("Tweet/{id}")]
         public async Task<ActionResult<TweetDto>> EditTweet(int id, EditTweetDto updatedTweet)
         {
-            var existingTweet = await _db.Tweets.FindAsync(id);
+            var username = GetUsernameFromClaims();
+
+            var existingTweet = await _db.Tweets
+                .Where(t => t.Id == id && t.Username == username)
+                .FirstOrDefaultAsync();
 
             if (existingTweet == null)
             {
@@ -73,7 +84,11 @@ namespace twetty.Controllers
         [HttpDelete("Tweet/{id}")]
         public async Task<ActionResult<Tweet>> DeleteTweet(int id)
         {
-            var tweet = await _db.Tweets.FindAsync(id);
+            var username = GetUsernameFromClaims();
+
+            var tweet = await _db.Tweets
+                .Where(t => t.Id == id && t.Username == username)
+                .FirstOrDefaultAsync();
 
             if (tweet == null)
             {
@@ -87,9 +102,11 @@ namespace twetty.Controllers
         }
 
         [HttpPost("Tweet")]
-        public async Task<ActionResult<TweetDto>> CreateTweet(TweetDto tweetDto)
+        public async Task<ActionResult<TweetDto>> CreateTweet(CreateTweetDto tweetDto)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == tweetDto.Username);
+            var username = GetUsernameFromClaims();
+
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
 
             if (user == null)
             {
@@ -98,7 +115,7 @@ namespace twetty.Controllers
 
             var tweet = new Tweet
             {
-                Username = user.Username,
+                Username = username,
                 Content = tweetDto.Content,
                 CreatedAt = DateTime.UtcNow
             };
@@ -116,9 +133,13 @@ namespace twetty.Controllers
             return Created($"/api/Tweets/{tweet.Id}", tweetResponse);
         }
 
-        [HttpGet("Tweets/{username}")]
-        public async Task<ActionResult<List<TweetDto>>> GetTweetsByUser(string username)
+
+
+        [HttpGet("Tweets")]
+        public async Task<ActionResult<List<TweetDto>>> GetTweetsByUser()
         {
+            var username = GetUsernameFromClaims();
+
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
 
             if (user == null)
@@ -142,7 +163,9 @@ namespace twetty.Controllers
         [HttpPost("Like")]
         public async Task<ActionResult<string>> LikeTweet(LikeDto likeDto)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == likeDto.Username);
+            var username = GetUsernameFromClaims();
+
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
             var tweet = await _db.Tweets.FindAsync(likeDto.TweetId);
 
             if (user == null || tweet == null)
@@ -150,7 +173,8 @@ namespace twetty.Controllers
                 return NotFound("User or tweet not found.");
             }
 
-            var existingLike = await _db.Likes.FirstOrDefaultAsync(l => l.Username == user.Username && l.TweetId == tweet.Id);
+            var existingLike = await _db.Likes
+                .FirstOrDefaultAsync(l => l.Username == username && l.TweetId == tweet.Id);
 
             if (existingLike != null)
             {
@@ -159,7 +183,7 @@ namespace twetty.Controllers
 
             var like = new Like
             {
-                Username = user.Username,
+                Username = username,
                 TweetId = tweet.Id
             };
 
@@ -170,8 +194,10 @@ namespace twetty.Controllers
         }
 
         [HttpDelete("Unlike")]
-        public async Task<ActionResult<string>> UnlikeTweet(string username, int tweetId)
+        public async Task<ActionResult<string>> UnlikeTweet(int tweetId)
         {
+            var username = GetUsernameFromClaims();
+
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
             var tweet = await _db.Tweets.FindAsync(tweetId);
 
@@ -180,7 +206,8 @@ namespace twetty.Controllers
                 return NotFound("User or tweet not found.");
             }
 
-            var like = await _db.Likes.FirstOrDefaultAsync(l => l.Username == user.Username && l.TweetId == tweet.Id);
+            var like = await _db.Likes
+                .FirstOrDefaultAsync(l => l.Username == username && l.TweetId == tweet.Id);
 
             if (like == null)
             {
@@ -192,5 +219,74 @@ namespace twetty.Controllers
 
             return Ok("Tweet unliked successfully.");
         }
+        [HttpPost("Follow")]
+        public async Task<ActionResult<string>> FollowUser(FollowDto followDto)
+        {
+            var followerUsername = GetUsernameFromClaims();
+            var targetUsername = followDto.TargetUsername;
+
+            var follower = await _db.Users.FirstOrDefaultAsync(u => u.Username == followerUsername);
+            var target = await _db.Users.FirstOrDefaultAsync(u => u.Username == targetUsername);
+
+            if (follower == null || target == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // Check if the follower is already following the target
+            var existingFollow = await _db.Follows
+                .FirstOrDefaultAsync(f => f.FollowerUsername == followerUsername && f.TargetUsername == targetUsername);
+
+            if (existingFollow != null)
+            {
+                return Conflict("User is already following this target.");
+            }
+
+            var follow = new Follow
+            {
+                FollowerUsername = followerUsername,
+                TargetUsername = targetUsername
+            };
+
+            _db.Follows.Add(follow);
+            await _db.SaveChangesAsync();
+
+            return Ok($"User {followerUsername} is now following {targetUsername}.");
+        }
+
+        [HttpGet("Timeline")]
+        public async Task<ActionResult<List<TweetResponseDto>>> GetTimeline()
+        {
+            var username = GetUsernameFromClaims();
+
+            var user = await _db.Users
+                .FirstOrDefaultAsync(u => u.Username == username);
+
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            var followingUsernames = await _db.Follows
+                .Where(f => f.FollowerUsername == username)
+                .Select(f => f.TargetUsername)
+                .ToListAsync();
+
+            followingUsernames.Add(username); // Include own tweets
+
+            var tweets = await _db.Tweets
+                .Where(t => followingUsernames.Contains(t.Username))
+                .OrderByDescending(t => t.CreatedAt)
+                .Select(t => new TweetResponseDto
+                {
+                    Username = t.Username,
+                    Content = t.Content,
+                    CreatedAt = t.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(tweets);
+        }
+
     }
 }

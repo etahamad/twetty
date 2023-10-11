@@ -19,15 +19,22 @@ namespace twetty.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly IConfiguration _configuration;
+        private readonly IUserService _userService;
 
-        // Inject ApplicationDbContext into the controller
-        public AuthController(ApplicationDbContext db, IConfiguration configuration)
+        public AuthController(ApplicationDbContext db, IConfiguration configuration, IUserService userService)
         {
             _db = db;
             _configuration = configuration;
+            _userService = userService;
         }
 
-        // Update Register and Login methods to interact with the database
+        [HttpGet, Authorize]
+        public ActionResult<string> GetMe()
+        {
+            var userName = _userService.GetMyName();
+            return Ok(userName);
+        }
+        
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register(UserDto request)
         {

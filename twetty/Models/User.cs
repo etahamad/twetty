@@ -63,13 +63,13 @@ namespace twetty.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public string FollowerUsername { get; set; }
-        public string FollowingUsername { get; set; }
+        public string TargetUsername { get; set; }
 
         [ForeignKey("FollowerUsername")]
         public User FollowerUser { get; set; }
 
-        [ForeignKey("FollowingUsername")]
-        public User FollowingUser { get; set; }
+        [ForeignKey("TargetUsername")]
+        public User TargetUser { get; set; }
     }
     public class Retweet
     {
