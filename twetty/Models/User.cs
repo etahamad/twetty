@@ -11,9 +11,9 @@ namespace twetty.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public int UserId { get; set; }
+        public string Username { get; set; }
         
-        [ForeignKey("UserId")]
+        [ForeignKey("Id")]
         public User User { get; set; }
         public string Email { get; set; }
         public byte[] PasswordHash { get; set;}
@@ -34,11 +34,11 @@ namespace twetty.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public string Username { get; set; }
+        public int UserId { get; set; }
         public string Content { get; set; }
         public DateTime CreatedAt { get; set; }
         
-        [ForeignKey("Username")]
+        [ForeignKey("UserId")]
         public User User { get; set; }
         public List<Like> Likes { get; set; }
         public List<Retweet> Retweets { get; set; }
