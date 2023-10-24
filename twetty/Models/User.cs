@@ -11,7 +11,6 @@ namespace twetty.Models
         [ForeignKey("UserId")]
         public User User { get; set;}
         public int UserId { get; set; }
-        
         [ForeignKey("UserId")]
         public User User { get; set; }
         public string Email { get; set; }
@@ -34,7 +33,6 @@ namespace twetty.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public int UserId { get; set; }
-        
         [ForeignKey("UserId")]
         public User User { get; set; }
         public string Content { get; set; }
@@ -72,10 +70,8 @@ namespace twetty.Models
         public int Id { get; set; }
         public int FollowerUserId { get; set; }
         public int TargetUserId { get; set; }
-
         [ForeignKey("FollowerUserId")]
         public User FollowerUser { get; set; }
-
         [ForeignKey("TargetUserId")]
         public User TargetUser { get; set; }
     }
