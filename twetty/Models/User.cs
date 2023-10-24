@@ -8,10 +8,13 @@ namespace twetty.Models
 {
     public class User
     {
+        [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        [Key]
-        public string Username { get; set; }
+        public int UserId { get; set; }
+        
+        [ForeignKey("UserId")]
+        public User User { get; set; }
         public string Email { get; set; }
         public byte[] PasswordHash { get; set;}
         public byte[] PasswordSalt { get; set;}
@@ -47,10 +50,9 @@ namespace twetty.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public string Username { get; set; }
-        public int TweetId { get; set; }
+        public int UserId { get; set; }
 
-        [ForeignKey("Username")]
+        [ForeignKey("UserId")]
         public User User { get; set; }
 
         [ForeignKey("TweetId")]
@@ -62,13 +64,13 @@ namespace twetty.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public string FollowerUsername { get; set; }
-        public string TargetUsername { get; set; }
+        public int FollowerUserId { get; set; }
+        public int TargetUserId { get; set; }
 
-        [ForeignKey("FollowerUsername")]
+        [ForeignKey("FollowerUserId")]
         public User FollowerUser { get; set; }
 
-        [ForeignKey("TargetUsername")]
+        [ForeignKey("TargetUserId")]
         public User TargetUser { get; set; }
     }
     public class Retweet
@@ -76,11 +78,9 @@ namespace twetty.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public string Username { get; set; }
-        public int TweetId { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public int UserId { get; set; }
 
-        [ForeignKey("Username")]
+        [ForeignKey("UserId")]
         public User User { get; set; }
 
         [ForeignKey("TweetId")]
@@ -94,12 +94,9 @@ namespace twetty.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public string Username { get; set; }
-        public int TweetId { get; set; }
-        public string Content { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public int UserId { get; set; }
 
-        [ForeignKey("Username")]
+        [ForeignKey("UserId")]
         public User User { get; set; }
 
         [ForeignKey("TweetId")]
