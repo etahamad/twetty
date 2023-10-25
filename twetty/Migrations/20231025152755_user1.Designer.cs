@@ -12,8 +12,8 @@ using twetty.Context;
 namespace twetty.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231010153557_6")]
-    partial class _6
+    [Migration("20231025152755_user1")]
+    partial class user1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,11 +27,11 @@ namespace twetty.Migrations
 
             modelBuilder.Entity("twetty.Models.Follow", b =>
                 {
-                    b.Property<string>("FollowerUsername")
-                        .HasColumnType("text");
+                    b.Property<int>("FollowerUserId")
+                        .HasColumnType("integer");
 
-                    b.Property<string>("FollowingUsername")
-                        .HasColumnType("text");
+                    b.Property<int>("TargetUserId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -39,17 +39,17 @@ namespace twetty.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.HasKey("FollowerUsername", "FollowingUsername");
+                    b.HasKey("FollowerUserId", "TargetUserId");
 
-                    b.HasIndex("FollowingUsername");
+                    b.HasIndex("TargetUserId");
 
                     b.ToTable("Follows");
                 });
 
             modelBuilder.Entity("twetty.Models.Like", b =>
                 {
-                    b.Property<string>("Username")
-                        .HasColumnType("text");
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("TweetId")
                         .HasColumnType("integer");
@@ -60,7 +60,7 @@ namespace twetty.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.HasKey("Username", "TweetId");
+                    b.HasKey("UserId", "TweetId");
 
                     b.HasIndex("TweetId");
 
@@ -85,15 +85,14 @@ namespace twetty.Migrations
                     b.Property<int>("TweetId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("TweetId");
 
-                    b.HasIndex("Username");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Replies");
                 });
@@ -112,15 +111,14 @@ namespace twetty.Migrations
                     b.Property<int>("TweetId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("TweetId");
 
-                    b.HasIndex("Username");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Retweets");
                 });
@@ -140,21 +138,23 @@ namespace twetty.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Username");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Tweets");
                 });
 
             modelBuilder.Entity("twetty.Models.User", b =>
                 {
-                    b.Property<string>("Username")
-                        .HasColumnType("text");
+                    b.Property<int>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserId"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -162,12 +162,6 @@ namespace twetty.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<byte[]>("PasswordHash")
                         .IsRequired()
@@ -181,28 +175,32 @@ namespace twetty.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Username");
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("UserId");
 
                     b.ToTable("Users");
                 });
 
             modelBuilder.Entity("twetty.Models.Follow", b =>
                 {
-                    b.HasOne("twetty.Models.User", "FollowerUser")
+                    b.HasOne("twetty.Models.User", "FollowerId")
                         .WithMany("Followers")
-                        .HasForeignKey("FollowerUsername")
+                        .HasForeignKey("FollowerUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("twetty.Models.User", "FollowingUser")
+                    b.HasOne("twetty.Models.User", "TargetId")
                         .WithMany("Followings")
-                        .HasForeignKey("FollowingUsername")
+                        .HasForeignKey("TargetUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("FollowerUser");
+                    b.Navigation("FollowerId");
 
-                    b.Navigation("FollowingUser");
+                    b.Navigation("TargetId");
                 });
 
             modelBuilder.Entity("twetty.Models.Like", b =>
@@ -215,7 +213,7 @@ namespace twetty.Migrations
 
                     b.HasOne("twetty.Models.User", "User")
                         .WithMany("Likes")
-                        .HasForeignKey("Username")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -234,7 +232,7 @@ namespace twetty.Migrations
 
                     b.HasOne("twetty.Models.User", "User")
                         .WithMany("Replies")
-                        .HasForeignKey("Username")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -253,7 +251,7 @@ namespace twetty.Migrations
 
                     b.HasOne("twetty.Models.User", "User")
                         .WithMany("Retweets")
-                        .HasForeignKey("Username")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -266,7 +264,7 @@ namespace twetty.Migrations
                 {
                     b.HasOne("twetty.Models.User", "User")
                         .WithMany("Tweets")
-                        .HasForeignKey("Username")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

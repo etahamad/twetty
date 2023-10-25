@@ -2,7 +2,7 @@
 {
     public class LikeDto
     {
-        public string Username { get; set; }
+        public int UserId { get; set; }
         public int TweetId { get; set; }
     }
 

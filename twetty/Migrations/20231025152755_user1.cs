@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace twetty.Migrations
 {
     /// <inheritdoc />
-    public partial class _3 : Migration
+    public partial class user1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,46 +16,43 @@ namespace twetty.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Username = table.Column<string>(type: "text", nullable: false),
-                    Id = table.Column<int>(type: "integer", nullable: false)
+                    UserId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Username = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
                     PasswordHash = table.Column<byte[]>(type: "bytea", nullable: false),
                     PasswordSalt = table.Column<byte[]>(type: "bytea", nullable: false),
-                    RefreshToken = table.Column<string>(type: "text", nullable: false),
-                    TokenCreated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    TokenExpires = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ProfileImageURL = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Users", x => x.Username);
+                    table.PrimaryKey("PK_Users", x => x.UserId);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Follows",
                 columns: table => new
                 {
-                    FollowerUsername = table.Column<string>(type: "text", nullable: false),
-                    FollowingUsername = table.Column<string>(type: "text", nullable: false),
+                    FollowerUserId = table.Column<int>(type: "integer", nullable: false),
+                    TargetUserId = table.Column<int>(type: "integer", nullable: false),
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Follows", x => new { x.FollowerUsername, x.FollowingUsername });
+                    table.PrimaryKey("PK_Follows", x => new { x.FollowerUserId, x.TargetUserId });
                     table.ForeignKey(
-                        name: "FK_Follows_Users_FollowerUsername",
-                        column: x => x.FollowerUsername,
+                        name: "FK_Follows_Users_FollowerUserId",
+                        column: x => x.FollowerUserId,
                         principalTable: "Users",
-                        principalColumn: "Username",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Follows_Users_FollowingUsername",
-                        column: x => x.FollowingUsername,
+                        name: "FK_Follows_Users_TargetUserId",
+                        column: x => x.TargetUserId,
                         principalTable: "Users",
-                        principalColumn: "Username",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -65,7 +62,7 @@ namespace twetty.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Username = table.Column<string>(type: "text", nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -73,10 +70,10 @@ namespace twetty.Migrations
                 {
                     table.PrimaryKey("PK_Tweets", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Tweets_Users_Username",
-                        column: x => x.Username,
+                        name: "FK_Tweets_Users_UserId",
+                        column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Username",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -84,14 +81,14 @@ namespace twetty.Migrations
                 name: "Likes",
                 columns: table => new
                 {
-                    Username = table.Column<string>(type: "text", nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
                     TweetId = table.Column<int>(type: "integer", nullable: false),
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Likes", x => new { x.Username, x.TweetId });
+                    table.PrimaryKey("PK_Likes", x => new { x.UserId, x.TweetId });
                     table.ForeignKey(
                         name: "FK_Likes_Tweets_TweetId",
                         column: x => x.TweetId,
@@ -99,10 +96,10 @@ namespace twetty.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Likes_Users_Username",
-                        column: x => x.Username,
+                        name: "FK_Likes_Users_UserId",
+                        column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Username",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -112,7 +109,7 @@ namespace twetty.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Username = table.Column<string>(type: "text", nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
                     TweetId = table.Column<int>(type: "integer", nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
@@ -127,10 +124,10 @@ namespace twetty.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Replies_Users_Username",
-                        column: x => x.Username,
+                        name: "FK_Replies_Users_UserId",
+                        column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Username",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -140,7 +137,7 @@ namespace twetty.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Username = table.Column<string>(type: "text", nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
                     TweetId = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -154,17 +151,17 @@ namespace twetty.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Retweets_Users_Username",
-                        column: x => x.Username,
+                        name: "FK_Retweets_Users_UserId",
+                        column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Username",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Follows_FollowingUsername",
+                name: "IX_Follows_TargetUserId",
                 table: "Follows",
-                column: "FollowingUsername");
+                column: "TargetUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Likes_TweetId",
@@ -177,9 +174,9 @@ namespace twetty.Migrations
                 column: "TweetId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Replies_Username",
+                name: "IX_Replies_UserId",
                 table: "Replies",
-                column: "Username");
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Retweets_TweetId",
@@ -187,14 +184,14 @@ namespace twetty.Migrations
                 column: "TweetId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Retweets_Username",
+                name: "IX_Retweets_UserId",
                 table: "Retweets",
-                column: "Username");
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Tweets_Username",
+                name: "IX_Tweets_UserId",
                 table: "Tweets",
-                column: "Username");
+                column: "UserId");
         }
 
         /// <inheritdoc />
