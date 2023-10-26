@@ -46,8 +46,7 @@ namespace twetty.Controllers
             {
                 Username = user.Username,
                 Email = user.Email,
-                ProfileImageURL = user.ProfileImageURL,
-                CreatedAt = user.CreatedAt
+                ProfileImageURL = user.ProfileImageURL
             };
 
             return Ok(userResponse);

@@ -40,20 +40,25 @@ namespace twetty.Controllers
         {
             CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
 
-            var user = new User
+            if (!await _db.Users.AnyAsync(u => u.Username == request.Username))
             {
-                Username = request.Username,
-                PasswordHash = passwordHash,
-                PasswordSalt = passwordSalt,
-                Email = request.Email,
-                CreatedAt = DateTime.UtcNow,
-                ProfileImageURL = request.ProfileImageURL
-            };
+                var user = new User
+                {
+                    Username = request.Username,
+                    PasswordHash = passwordHash,
+                    PasswordSalt = passwordSalt,
+                    Email = request.Email,
+                    CreatedAt = DateTime.UtcNow,
+                    ProfileImageURL = request.ProfileImageURL
+                };
 
-            _db.Users.Add(user);
-            await _db.SaveChangesAsync();
+                _db.Users.Add(user);
+                await _db.SaveChangesAsync();
 
-            return Ok(user);
+                return Ok(user);
+                
+            }
+            return BadRequest("Username already exists.");
         }
 
         [HttpPost("login")]
